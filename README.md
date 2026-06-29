@@ -25,8 +25,21 @@ order**, which splits by host (Outlook vs Excel) and by purpose.
 **Phase 1 — Timing scan (Outlook), pick ONE rule variant**
 
 1. `find-offhours-emails.bas` → `FindOffHoursEmails` — the canonical
-   **Paris-only** business-hours scan. Start here. (Run `ListMailboxes` first to
-   confirm the mailbox display name.)
+   **Paris-only** business-hours scan. Start here. (Run `ListMailboxes` first —
+   see below — to confirm the mailbox display name for `SHARED_MAILBOX`.)
+
+   **How to run `ListMailboxes`** (a helper macro inside
+   `find-offhours-emails.bas`):
+   1. In **Outlook**, press `Alt+F11` to open the VBA editor.
+   2. Import `find-offhours-emails.bas` if you haven't
+      (`File → Import File…`).
+   3. Open the **Immediate window** with `Ctrl+G` (this is where the output
+      prints).
+   4. Click anywhere inside the `Sub ListMailboxes()` body, then press `F5`
+      (or `Run → Run Sub/UserForm`).
+   5. Each top-level mailbox display name prints in the Immediate window. Copy
+      the exact name and paste it into the `SHARED_MAILBOX` constant at the top
+      of the module before running `FindOffHoursEmails`.
 2. *(optional alternative)* `find-offhours-emails-india-counts-as-inhours.bas` →
    `FindOffHoursEmailsIndiaInHours` — same scan but the India IST shift counts as
    in-hours. Run instead of / alongside #1 to compare; its output is prefixed
