@@ -74,6 +74,34 @@ the top of the module or the deterministic half won't fire:
 or `add-timing-columns` → then the categorization pair `extract-emails-for-llm`
 (v1) and `extract-threads-for-llm` (v2).
 
+### Scan window — don't scan the whole inbox
+
+All four Outlook scanning scripts (`find-offhours-emails.bas`,
+`find-offhours-emails-india-counts-as-inhours.bas`, `extract-emails-for-llm.bas`,
+`extract-threads-for-llm.bas`) limit the date range via the **same three
+`Private Const` lines** near the top of the module (just below the holiday
+lists). Edit them there before running:
+
+```vba
+' Date format: "YYYY-MM-DD". Leave a value empty ("") to disable that bound.
+Private Const SCAN_FROM_DATE   As String = ""    ' lower bound, e.g. "2025-04-01"
+Private Const SCAN_TO_DATE     As String = ""    ' upper bound, e.g. "2025-04-30"
+Private Const SCAN_LAST_N_DAYS As Long   = 30    ' used ONLY when SCAN_FROM_DATE is ""
+```
+
+How they combine:
+
+- **Rolling window (default):** leave `SCAN_FROM_DATE` empty and set
+  `SCAN_LAST_N_DAYS` (e.g. `30`) — scans the last N days up to now.
+- **Fixed window:** set `SCAN_FROM_DATE` (and optionally `SCAN_TO_DATE`). When
+  `SCAN_FROM_DATE` is non-empty it **takes precedence** over `SCAN_LAST_N_DAYS`.
+  `SCAN_TO_DATE` is inclusive to end-of-day; leave it empty for "up to now".
+
+The scan uses `Items.Restrict` (a server/index-side date filter), so a small
+window is fast even if it sits years back in a large mailbox — only the matching
+items are touched, the whole inbox is never iterated. Use a ~1-month window to
+start.
+
 ## Scripts
 
 | File | Host | Entry macro | What it does |
