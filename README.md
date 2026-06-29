@@ -15,6 +15,52 @@ All Outlook macros are **read-only on the mailbox** by structure (no `Save`,
 `Move`, `Delete`, `Send`, category or read-state changes). Output is written to
 timestamped `.xlsx` files.
 
+## Workflow / run order
+
+The five `.bas` files have **no dependencies on each other** — each module is
+self-contained, so there is no required *import* order (only one module of a
+given name can live in a VBA project at a time). What matters is the **workflow
+order**, which splits by host (Outlook vs Excel) and by purpose.
+
+**Phase 1 — Timing scan (Outlook), pick ONE rule variant**
+
+1. `find-offhours-emails.bas` → `FindOffHoursEmails` — the canonical
+   **Paris-only** business-hours scan. Start here. (Run `ListMailboxes` first to
+   confirm the mailbox display name.)
+2. *(optional alternative)* `find-offhours-emails-india-counts-as-inhours.bas` →
+   `FindOffHoursEmailsIndiaInHours` — same scan but the India IST shift counts as
+   in-hours. Run instead of / alongside #1 to compare; its output is prefixed
+   `offhours-emails-india` so it won't collide.
+
+**Phase 1b — Excel-side re-timing (optional)**
+
+3. `add-timing-columns.bas` → `AddTimingColumns` — run **in Excel** to apply the
+   Paris-only rules to an already-exported `.xlsx`. Only needed if a sheet lacks
+   the timing columns; skip if you used #1/#2.
+
+**Phase 2 — Off-hours categorization (Outlook → Excel + local LLM)**
+
+Run **both** versions on the same window and compare:
+
+4. **v1** — `extract-emails-for-llm.bas` → `EmailsForLLM` (one row per message,
+   single freeform LLM pass).
+5. **v2** — `extract-threads-for-llm.bas` → `ExtractThreadsForLLM` (one row per
+   conversation, deterministic triage in VBA + a two-pass LLM flow whose totals
+   are counted in Excel).
+
+**Before running the Phase-2 extractors**, populate the `Private Const` config at
+the top of the module or the deterministic half won't fire:
+
+- `SHARED_MAILBOX`, `FOLDER_NAME`, scan window, `OUTPUT_DIR`
+- team rosters `APS` / `ADM` / `DEV_ADDRESSES_CSV` (start empty)
+- v2 also needs `SUPPORT_ADDRESSES_CSV` + `AUTOMATED_SENDERS_CSV` (drives the
+  Inbound/Outbound split). After the run, check the `Stats` sheet — if Outbound
+  is 0, the support list is wrong.
+
+**Short version:** `find-offhours-emails` (Paris) → optionally the India variant
+or `add-timing-columns` → then the categorization pair `extract-emails-for-llm`
+(v1) and `extract-threads-for-llm` (v2).
+
 ## Scripts
 
 | File | Host | Entry macro | What it does |
